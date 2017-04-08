@@ -1,3 +1,4 @@
+/*不恩师*/
 html, body{
 	/*background-color: #90a4ae;*/
 	background-color: #cfd8dc;
@@ -53,9 +54,13 @@ main h3 span{
 }
 
 li {
+	position: relative;
+	overflow: hidden;
+	height: 36px;
 	padding-left: 10px;
-	margin-top: 15px;
+	padding-right: 30px;
 	border-radius: 5px;
+	margin-top: 15px;
 	line-height: 36px; 	
 	font-size: 20px;
 	list-style-type: none;
@@ -64,7 +69,7 @@ li {
 	box-shadow: 1px 1px #aab1b5, -2px -2px #b0bec5;
 }
 
-li input {
+li > input {
 	width: 20px;
 	height: 20px;
 	box-shadow: 2px 3px 2px #90a4ae inset;
@@ -74,7 +79,32 @@ li input {
 	vertical-align: text-top;
 }
 
+li p {
+	position: absolute;
+	overflow: hidden;
+	white-space:nowrap; 
+	text-overflow: ellipsis;
+	top:0px;
+	left: 40px;
+	width: 440px;
+	height: 30px;
+	line-height: 36px;
+	border-width: 0;
+	border-style: solid;
+	border-color: #fff;
+}
+
+li p input {
+	width: 100%;
+	height: 100%;
+	font-size: 20px;
+	text-indent: 10px;
+}
+
 li span {
+	position: absolute;
+	top: 3px;
+	right: 0;
 	float: right;
 	margin: 7px 20px;
 	display: inline-block;

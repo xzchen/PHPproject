@@ -17,13 +17,12 @@ function renderDom(domName) {
 					for (var i = 0; i < data[domName].length; i++) {
 						arr.push(data[domName][i]);
 					}
-					innerHTML += "<ul><li><input type='checkbox'>";
-					innerHTML += arr.join("<span></span></li><li><input type='checkbox'>") +"<span></span></li></ul>";
+					innerHTML += "<ul onclick='editText()'><li><input type='checkbox'><p>";
+					innerHTML += arr.join("</p><span></span></li><li><input type='checkbox'><p>") +"</p><span></span></li></ul>";
 				}
 				dom.innerHTML = innerHTML;
 			}
 		}
-
 	}
 }
 
@@ -53,7 +52,8 @@ doing.onclick = function (ev) {
 	}
 	else if (target.nodeName === "SPAN") {
 		text = target.parentNode.innerText;
-		cmd('delDoing', text);
+		console.log(text)
+		cmd('delDoing', text, 'doing');
 	}
 	else if (target.nodeName === "LI") {
 	}
@@ -70,29 +70,30 @@ done.onclick = function (ev) {
 	}
 	else if (target.nodeName === "SPAN") {
 		text = target.parentNode.innerText;
-		cmd('delDone', text);
+		
+		cmd('delDone', text, 'done');
 	}
 	else if (target.nodeName === "LI") {
 	}
 }
 
-
 /**
  * 根据type来决定增改删操作，
  * @param  {[string]} type [根据type来决定增改删操作]
  * @param  {[string]} text  [决定mysql语句中的变化的文本]
- * @param  {[string]} dom  [根据要求查询不同的DOM，局部刷新]
- * @return {[type]}      [description]
+ * @param  {[string]} domName  [根据要求查询不同的DOM，局部刷新]
+ * @param  {[string]} oldText [对于数据库的update操作，需要根据oldText作为WHRER条件]
  */
-function cmd(type, text) {
+function cmd(type, text, domName, oldText) {
 	request = new XMLHttpRequest();
 	request.open('POST', 'service.php');
 	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	request.send('cmd='+ type + '&text=' + text);
+	request.send('cmd='+ type + '&domName=' + domName + '&text=' + text  + '&oldText=' + oldText);
 	request.onreadystatechange = function () {
 		if (request.readyState === 4) {
 			if (request.status === 200) {
 				//对于如果不让添加的TODO没有插入数据库，自然也不用去渲染DOM
+				//对于update操作。由于再editText函数里就修改了文本。所以就不需要再去执行rendernDom了。
 				if (request.responseText !== 'false') {
 					if (type === 'create') {
 						renderDom('doing');
@@ -119,4 +120,64 @@ function cmd(type, text) {
 		}
 	}
 	
+}
+
+
+function editText(ev) {
+	ev = ev || window.event;
+	var target = ev.target || ev.srcElement;
+	if (target.nodeName === 'P') {
+		var oldText = target.innerText; //得到之前在数据库里保存的数据。如果之后不满足修改条件，就返回原来的值
+		target.innerHTML = "<input type ='text' value='" + oldText + "'>";
+		var input = target.getElementsByTagName('input')[0];
+		input.onclick = function (ev) {
+			ev = ev || window.event;
+			ev.stopPropagation()
+		}
+		input.focus();//只要点击了p标签，就进入编辑状态
+		input.onblur = function () {//失焦的时候提交数据
+			if (this.value) {
+				var allList = document.getElementsByTagName('li')
+				var allListText = [];
+				for (var i = 0; i < allList.length; i++) {
+					allListText.push(allList[i].innerText)
+				}
+				//如果数据没有重复，可以修改为用户修改的数据
+				if (allListText.indexOf(this.value) === -1) {
+					target.innerHTML = input.value;
+				}
+				//如果有重复,且重复的就是当前的。说明用户未修改数据
+				else if (allListText.indexOf(this.value) === allListText.indexOf(oldText)){
+					target.innerHTML = oldText;
+					return false;
+				}
+				else {
+					alert('输入数据重复了');
+					target.innerHTML = oldText;
+					return false;
+				}
+			}
+			else {
+				alert("内容不能为空");
+				target.innerText = oldText;
+				return;
+			}
+			//判断是修改doing里的list还是done里的list。然后对于不同的dom执行修改。
+			if (target.parentNode.parentNode.parentNode.id === 'doing') {
+				cmd('updateDoing', target.innerText, 'doing', oldText);
+			}
+			else {
+				cmd('updateDone',target.innerText, 'done', oldText);
+			}
+		}
+		//回车也可以提交数据
+		input.onkeydown = function (ev) {
+			ev = ev || window.event;
+			var keyCode = ev.keyCode || ev.which || ev.charCode;
+			if (keyCode === 13) {
+				input.onblur();
+			}
+		}
+
+	}
 }
